@@ -330,6 +330,60 @@
       height: 200px; color: var(--muted); font-size: 13px; gap: 8px;
     }
 
+    .foto-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.75);
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .foto-modal.open { display: flex; }
+    .foto-modal-card {
+      background: var(--surface);
+      border-radius: 14px;
+      max-width: 520px;
+      width: 100%;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,.4);
+    }
+    .foto-modal-img {
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      display: block;
+      background: var(--bg);
+    }
+    .foto-modal-img-placeholder {
+      width: 100%;
+      height: 180px;
+      background: var(--g50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+    .foto-modal-body { padding: 1.25rem; }
+    .foto-modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .foto-modal-meta { font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
+    .foto-modal-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .foto-modal-tag {
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+      background: var(--g50); color: var(--g800);
+    }
+    .foto-modal-notizen { font-size: 13px; color: var(--muted); font-style: italic; }
+    .foto-modal-nav { display: flex; gap: 8px; margin-top: 1rem; }
+    .foto-modal-close {
+      position: absolute; top: 12px; right: 12px;
+      width: 32px; height: 32px;
+      background: rgba(0,0,0,.5); color: #fff;
+      border: none; border-radius: 50%;
+      font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
     @media (max-width: 700px) {
       .kpi-grid { grid-template-columns: 1fr 1fr; }
       .grid-2 { grid-template-columns: 1fr; }
@@ -505,27 +559,29 @@
 
       <div class="grid-2" style="margin-bottom:1rem;">
         <div class="card">
-          <div class="card-title">Excel / CSV hochladen</div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div>
-              <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Wolfenbüttel</div>
-              <div class="upload-zone" onclick="document.getElementById('upload-wb').click()">
-                <input type="file" id="upload-wb" accept=".xlsx,.csv" style="display:none" onchange="handleUpload('wolfenbuettel', this)">
-                <div class="upload-icon">📊</div>
-                <div class="upload-text"><strong>Datei auswählen</strong> oder hierher ziehen</div>
-                <div class="upload-text" style="margin-top:3px;font-size:11px;">.xlsx · .csv</div>
-              </div>
+          <div class="card-title">📷 Fotos hochladen</div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-bottom:12px;">
+            <div class="form-field">
+              <label>Region</label>
+              <select id="foto-region" onchange="loadMassnahmenForFoto()">
+                <option value="">Auswählen…</option>
+              </select>
             </div>
-            <div>
-              <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Ostwestfalen</div>
-              <div class="upload-zone" onclick="document.getElementById('upload-owf').click()">
-                <input type="file" id="upload-owf" accept=".xlsx,.csv" style="display:none" onchange="handleUpload('ostwestfalen', this)">
-                <div class="upload-icon">📊</div>
-                <div class="upload-text"><strong>Datei auswählen</strong> oder hierher ziehen</div>
-                <div class="upload-text" style="margin-top:3px;font-size:11px;">.xlsx · .csv</div>
-              </div>
+            <div class="form-field">
+              <label>Maßnahme / Betrieb</label>
+              <select id="foto-massnahme">
+                <option value="">Erst Region wählen…</option>
+              </select>
             </div>
           </div>
+          <div class="upload-zone" id="foto-upload-zone" onclick="document.getElementById('foto-file-input').click()" style="margin-bottom:12px;">
+            <input type="file" id="foto-file-input" accept="image/*" multiple style="display:none" onchange="handleFotoUpload(this)">
+            <div class="upload-icon">📷</div>
+            <div class="upload-text"><strong>Fotos auswählen</strong> oder hierher ziehen</div>
+            <div class="upload-text" style="margin-top:3px;font-size:11px;">JPG · PNG · WEBP · mehrere möglich</div>
+          </div>
+          <div id="foto-upload-status" style="display:none; font-size:12px; padding:8px 12px; border-radius:6px; margin-bottom:8px;"></div>
+          <div id="foto-preview" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
         </div>
 
         <div class="card">
@@ -662,6 +718,7 @@ function showPage(page, el) {
   document.getElementById('page-' + page).classList.add('active');
   if (el) el.classList.add('active');
   if (page === 'massnahmen') loadMassnahmen();
+  if (page === 'admin') initAdminFotoRegion();
 }
 
 function switchRegion(idx, el) {
@@ -805,7 +862,16 @@ function renderMap(m, region) {
       },
       onEachFeature: (feature, layer) => {
         const p = feature.properties;
-        layer.bindPopup(`<strong>${p.betrieb}</strong><br>${p.typ} · ${p.ha} ha${p.name ? '<br>' + p.name : ''}${p.rot === 'ja' ? '<br><span style="color:#A32D2D">Rotes Gebiet</span>' : ''}`);
+        const popupHtml = `<div style="font-family:var(--font);min-width:160px;">
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px;">${p.betrieb}</div>
+          <div style="font-size:12px;color:#666;">${p.typ}${p.ha ? ' · ' + p.ha + ' ha' : ''}${p.name ? '<br>' + p.name : ''}</div>
+          ${p.rot === 'ja' ? '<div style="font-size:11px;color:#A32D2D;margin-top:2px;">Rotes Gebiet</div>' : ''}
+          <button onclick="openFotoModal('${p.betrieb}','${p.typ}',${p.ha},'${p.name||''}',null)"
+            style="margin-top:8px;padding:4px 12px;background:#3B6D11;color:#fff;border:none;border-radius:5px;font-size:11px;cursor:pointer;width:100%;">
+            📷 Fotos ansehen
+          </button>
+        </div>`;
+        layer.bindPopup(popupHtml, {maxWidth: 220});
         layer.on('mouseover', function() { this.setStyle({fillOpacity: 0.9, weight: 3, color: '#ffff00'}); });
         layer.on('mouseout', function() { geoLayer.resetStyle(this); });
       }
@@ -852,7 +918,14 @@ function renderMap(m, region) {
       },
       onEachFeature: (feature, layer) => {
         const p = feature.properties;
-        layer.bindPopup('<strong>' + p.betrieb + '</strong><br>' + p.typ + (p.ha ? ' · ' + p.ha + ' ha' : '') + (p.name ? '<br>' + p.name : ''));
+        const pTyp = p.typ || ''; const pHa = p.ha || 0; const pName = p.name || ''; const pBetrieb = p.betrieb || '';
+        const owlPopupHtml = '<div style="font-family:system-ui;min-width:160px;">' +
+          '<div style="font-weight:600;font-size:13px;margin-bottom:2px;">' + pBetrieb + '</div>' +
+          '<div style="font-size:12px;color:#666;">' + pTyp + (pHa ? ' · ' + pHa + ' ha' : '') + (pName ? '<br>' + pName : '') + '</div>' +
+          '<button onclick="openFotoModal(\'' + pBetrieb + '\',\'' + pTyp + '\',' + pHa + ',\'' + pName + '\',null)" ' +
+          'style="margin-top:8px;padding:4px 12px;background:#3B6D11;color:#fff;border:none;border-radius:5px;font-size:11px;cursor:pointer;width:100%;">' +
+          '📷 Fotos ansehen</button></div>';
+        layer.bindPopup(owlPopupHtml, {maxWidth: 220});
         layer.on('mouseover', function() { this.setStyle({fillOpacity: 0.9, weight: 3, color: '#ffff00'}); });
         layer.on('mouseout', function() { owlLayer.resetStyle(this); });
       }
@@ -981,6 +1054,7 @@ function populateFormSelects() {
   rs.innerHTML = '<option value="">Auswählen…</option>' + regions.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
   const ts = document.getElementById('form-typ');
   ts.innerHTML = '<option value="">Auswählen…</option>' + typen.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  initAdminFotoRegion();
 }
 
 async function saveMassnahme() {
@@ -1111,6 +1185,172 @@ function renderFlaechenListe(features, layerGroup, map, geoLayer) {
     grp.appendChild(body);
     list.appendChild(grp);
   });
+}
+
+
+// ── FOTO MODAL ──
+let currentFotoUrls = [];
+let currentFotoIdx = 0;
+
+async function openFotoModal(betrieb, typ, ha, name, massnahmeId) {
+  const modal = document.getElementById('foto-modal');
+  document.getElementById('foto-title').textContent = betrieb;
+  document.getElementById('foto-meta').textContent = (name || typ) + (ha ? ' · ' + ha + ' ha' : '');
+  document.getElementById('foto-tags').innerHTML = `<span class="foto-modal-tag">${typ}</span>${ha ? '<span class="foto-modal-tag">' + ha + ' ha</span>' : ''}`;
+  document.getElementById('foto-notizen').textContent = '';
+
+  // Load photos from Supabase
+  currentFotoUrls = [];
+  currentFotoIdx = 0;
+
+  try {
+    // Try to get foto_urls from massnahmen table
+    if (massnahmeId) {
+      const { data } = await sb.from('massnahmen').select('foto_urls, notizen').eq('id', massnahmeId).single();
+      if (data?.foto_urls?.length) {
+        currentFotoUrls = data.foto_urls.map(url => {
+          if (url.startsWith('http')) return url;
+          const { data: { publicUrl } } = sb.storage.from('massnahmen-fotos').getPublicUrl(url);
+          return publicUrl;
+        });
+      }
+      if (data?.notizen) document.getElementById('foto-notizen').textContent = data.notizen;
+    }
+
+    // Fallback: search storage by betrieb name
+    if (!currentFotoUrls.length) {
+      const searchName = betrieb.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 8);
+      const { data: files } = await sb.storage.from('massnahmen-fotos').list('', { search: searchName });
+      if (files?.length) {
+        currentFotoUrls = files.slice(0, 5).map(f => {
+          const { data: { publicUrl } } = sb.storage.from('massnahmen-fotos').getPublicUrl(f.name);
+          return publicUrl;
+        });
+      }
+    }
+  } catch(e) { console.log('Foto load error:', e); }
+
+  renderFotoCarousel();
+  modal.classList.add('open');
+}
+
+function renderFotoCarousel() {
+  const carousel = document.getElementById('foto-carousel');
+  const nav = document.getElementById('foto-nav');
+
+  if (currentFotoUrls.length) {
+    carousel.innerHTML = `<img class="foto-modal-img" src="${currentFotoUrls[currentFotoIdx]}" onerror="this.parentElement.innerHTML='<div class=\'foto-modal-img-placeholder\'>📷</div>'" />`;
+    nav.innerHTML = currentFotoUrls.length > 1 ? `
+      <button class="btn btn-outline" onclick="changeFoto(-1)" ${currentFotoIdx === 0 ? 'disabled' : ''}>← Zurück</button>
+      <span style="font-size:12px;color:var(--muted);align-self:center;">${currentFotoIdx+1} / ${currentFotoUrls.length}</span>
+      <button class="btn btn-outline" onclick="changeFoto(1)" ${currentFotoIdx === currentFotoUrls.length-1 ? 'disabled' : ''}>Weiter →</button>
+    ` : '';
+  } else {
+    carousel.innerHTML = '<div class="foto-modal-img-placeholder">📷<div style="font-size:14px;margin-top:8px;color:var(--muted)">Noch keine Fotos</div></div>';
+    nav.innerHTML = '';
+  }
+}
+
+function changeFoto(dir) {
+  currentFotoIdx = Math.max(0, Math.min(currentFotoUrls.length-1, currentFotoIdx + dir));
+  renderFotoCarousel();
+}
+
+function closeFotoModal(e) {
+  if (e.target.id === 'foto-modal') document.getElementById('foto-modal').classList.remove('open');
+}
+
+
+// ── FOTO UPLOAD (Admin) ──
+async function loadMassnahmenForFoto() {
+  const regionId = document.getElementById('foto-region').value;
+  const sel = document.getElementById('foto-massnahme');
+  sel.innerHTML = '<option value="">Wird geladen…</option>';
+  if (!regionId) { sel.innerHTML = '<option value="">Erst Region wählen…</option>'; return; }
+
+  const { data } = await sb.from('massnahmen')
+    .select('id, landwirt_name, flaeche_ha, massnahmen_typen(name)')
+    .eq('region_id', regionId)
+    .order('landwirt_name');
+
+  sel.innerHTML = '<option value="">Maßnahme auswählen…</option>' +
+    (data || []).map(m =>
+      `<option value="${m.id}">${m.landwirt_name} – ${m.massnahmen_typen?.name || '?'} (${m.flaeche_ha} ha)</option>`
+    ).join('');
+}
+
+async function handleFotoUpload(input) {
+  const massnahmeId = document.getElementById('foto-massnahme').value;
+  const status = document.getElementById('foto-upload-status');
+  const preview = document.getElementById('foto-preview');
+
+  if (!massnahmeId) {
+    status.style.display = 'block';
+    status.style.background = 'var(--r50)';
+    status.style.color = 'var(--r600)';
+    status.textContent = 'Bitte zuerst eine Maßnahme auswählen.';
+    return;
+  }
+
+  const files = Array.from(input.files);
+  if (!files.length) return;
+
+  status.style.display = 'block';
+  status.style.background = 'var(--g50)';
+  status.style.color = 'var(--g800)';
+  status.textContent = `0 / ${files.length} Fotos werden hochgeladen…`;
+
+  preview.innerHTML = '';
+  const uploadedUrls = [];
+  let done = 0;
+
+  for (const file of files) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const fileName = `${massnahmeId}_${Date.now()}_${Math.random().toString(36).substr(2,6)}.${ext}`;
+
+    const { error } = await sb.storage.from('massnahmen-fotos').upload(fileName, file, {
+      cacheControl: '3600', upsert: false, contentType: file.type
+    });
+
+    if (!error) {
+      const { data: { publicUrl } } = sb.storage.from('massnahmen-fotos').getPublicUrl(fileName);
+      uploadedUrls.push(fileName);
+
+      // Show preview
+      const img = document.createElement('img');
+      img.src = publicUrl;
+      img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);';
+      preview.appendChild(img);
+    }
+
+    done++;
+    status.textContent = `${done} / ${files.length} Fotos hochgeladen…`;
+  }
+
+  if (uploadedUrls.length) {
+    // Get existing foto_urls and append
+    const { data: existing } = await sb.from('massnahmen').select('foto_urls').eq('id', massnahmeId).single();
+    const allUrls = [...(existing?.foto_urls || []), ...uploadedUrls];
+    await sb.from('massnahmen').update({ foto_urls: allUrls }).eq('id', massnahmeId);
+
+    status.textContent = `✓ ${uploadedUrls.length} Foto(s) gespeichert!`;
+    status.style.background = 'var(--g50)';
+    status.style.color = 'var(--g800)';
+  } else {
+    status.textContent = 'Fehler beim Hochladen. Bitte nochmal versuchen.';
+    status.style.background = 'var(--r50)';
+    status.style.color = 'var(--r600)';
+  }
+
+  input.value = '';
+}
+
+// Populate foto-region select when admin page loads
+async function initAdminFotoRegion() {
+  const sel = document.getElementById('foto-region');
+  if (!sel || !regions.length) return;
+  sel.innerHTML = '<option value="">Auswählen…</option>' +
+    regions.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
 }
 
 </script>
