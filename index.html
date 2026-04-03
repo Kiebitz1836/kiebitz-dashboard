@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kiebitz Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --g900: #173404; --g800: #27500A; --g600: #3B6D11;
+      --g400: #639922; --g200: #97C459; --g100: #C0DD97; --g50: #EAF3DE;
+      --t600: #0F6E56; --t400: #1D9E75; --t100: #9FE1CB; --t50: #E1F5EE;
+      --a600: #854F0B; --a400: #BA7517; --a100: #FAC775; --a50: #FAEEDA;
+      --gr600: #5F5E5A; --gr400: #888780; --gr100: #D3D1C7; --gr50: #F1EFE8;
+      --r600: #A32D2D; --r50: #FCEBEB;
+      --bg: #F7F6F2;
+      --surface: #FFFFFF;
+      --border: rgba(0,0,0,0.08);
+      --text: #1a1a18;
+      --muted: #6b6b68;
+      --font: 'DM Sans', system-ui, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ── LOGIN ── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--g50) 0%, #f0f4e8 100%);
+      padding: 2rem;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+
+    .login-logo {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;
+    }
+
+    .login-logo-icon {
+      width: 40px; height: 40px;
+      background: var(--g600);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .login-logo-icon svg { width: 22px; height: 22px; }
+
+    .login-logo-text { font-size: 20px; font-weight: 600; color: var(--text); }
+    .login-logo-sub { font-size: 12px; color: var(--muted); }
+
+    .login-heading { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+    .login-sub { font-size: 13px; color: var(--muted); margin-bottom: 1.75rem; }
+
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 5px; }
+
+    .field input {
+      width: 100%; padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px; font-family: var(--font);
+      background: var(--surface); color: var(--text);
+      outline: none; transition: border-color .15s;
+    }
+
+    .field input:focus { border-color: var(--g400); box-shadow: 0 0 0 3px rgba(99,153,34,.12); }
+
+    .btn-login {
+      width: 100%; padding: 11px;
+      background: var(--g600); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; font-family: var(--font);
+      cursor: pointer; transition: background .15s;
+      margin-top: 4px;
+    }
+
+    .btn-login:hover { background: var(--g800); }
+    .btn-login:disabled { background: var(--gr400); cursor: not-allowed; }
+
+    .login-error {
+      color: var(--r600); font-size: 12px;
+      background: var(--r50); padding: 8px 12px;
+      border-radius: 6px; margin-top: 10px;
+      display: none;
+    }
+
+    /* ── APP SHELL ── */
+    #app { display: none; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 200;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1.5rem; height: 54px;
+    }
+
+    .topbar-left { display: flex; align-items: center; gap: 20px; }
+
+    .topbar-logo { display: flex; align-items: center; gap: 8px; }
+    .topbar-logo-icon {
+      width: 30px; height: 30px; background: var(--g600);
+      border-radius: 7px; display: flex; align-items: center; justify-content: center;
+    }
+    .topbar-logo-icon svg { width: 17px; height: 17px; }
+    .topbar-logo-name { font-size: 15px; font-weight: 600; }
+
+    .nav { display: flex; gap: 2px; }
+    .nav-btn {
+      padding: 5px 12px; border-radius: 6px;
+      font-size: 13px; font-weight: 500;
+      border: none; background: none; cursor: pointer;
+      color: var(--muted); transition: all .12s;
+    }
+    .nav-btn:hover { background: var(--g50); color: var(--g800); }
+    .nav-btn.active { background: var(--g50); color: var(--g800); }
+
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    .region-switcher {
+      display: flex; gap: 3px;
+      background: var(--bg); padding: 3px; border-radius: 8px;
+    }
+
+    .region-btn {
+      padding: 4px 11px; font-size: 12px; font-weight: 500;
+      border: none; border-radius: 6px; cursor: pointer;
+      background: none; color: var(--muted); transition: all .12s;
+      white-space: nowrap;
+    }
+    .region-btn.active {
+      background: var(--surface); color: var(--g800);
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    }
+
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--g100); color: var(--g800);
+      font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+
+    .btn-logout {
+      font-size: 12px; color: var(--muted);
+      background: none; border: none; cursor: pointer; padding: 4px 8px;
+      border-radius: 5px;
+    }
+    .btn-logout:hover { background: var(--bg); color: var(--text); }
+
+    /* ── PAGES ── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .main { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+
+    .page-header { margin-bottom: 1.25rem; }
+    .page-title { font-size: 18px; font-weight: 600; }
+    .page-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── KPI GRID ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+
+    .kpi-label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+    .kpi-value { font-size: 24px; font-weight: 600; color: var(--text); line-height: 1.1; }
+    .kpi-unit { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .kpi-progress { margin-top: 10px; height: 3px; background: var(--border); border-radius: 2px; }
+    .kpi-bar { height: 3px; background: var(--g400); border-radius: 2px; transition: width .6s ease; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .card-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+    /* ── BUDGET BAR ── */
+    .budget-wrap { margin-bottom: 1rem; }
+    .budget-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .budget-meta strong { color: var(--text); font-weight: 600; }
+    .budget-track { height: 22px; background: var(--bg); border-radius: 6px; overflow: hidden; display: flex; }
+    .budget-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; transition: width .6s ease; }
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+    /* ── MEASURES LIST ── */
+    .measure-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .measure-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .measure-name { font-size: 13px; flex: 1; }
+    .measure-track { flex: 2; height: 5px; background: var(--border); border-radius: 3px; }
+    .measure-fill { height: 5px; border-radius: 3px; }
+    .measure-ha { font-size: 12px; color: var(--muted); min-width: 50px; text-align: right; }
+
+    /* ── MAP ── */
+    .map-box {
+      background: #e8f0e0;
+      border-radius: 8px;
+      height: 230px;
+      position: relative;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .map-pin {
+      position: absolute;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      cursor: pointer;
+      transition: transform .15s;
+      box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    }
+    .map-pin:hover { transform: scale(1.4); }
+    .map-pin-label {
+      position: absolute;
+      font-size: 10px; font-weight: 500;
+      background: var(--g800); color: #fff;
+      padding: 2px 6px; border-radius: 4px;
+      white-space: nowrap; pointer-events: none;
+      display: none;
+    }
+    .map-pin:hover + .map-pin-label { display: block; }
+    .map-open-btn {
+      position: absolute; bottom: 10px; right: 10px;
+      background: var(--g600); color: #fff;
+      border: none; border-radius: 6px;
+      font-size: 11px; font-weight: 600; font-family: var(--font);
+      padding: 5px 10px; cursor: pointer;
+    }
+    .map-open-btn:hover { background: var(--g800); }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { font-size: 11px; font-weight: 600; color: var(--muted); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: .04em; }
+    td { padding: 10px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg); }
+
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .tag-green { background: var(--g50); color: var(--g800); }
+    .tag-amber { background: var(--a50); color: var(--a600); }
+    .tag-teal { background: var(--t50); color: var(--t600); }
+
+    /* ── ADMIN ── */
+    .upload-zone {
+      border: 1.5px dashed var(--gr100);
+      border-radius: 10px; padding: 2rem;
+      text-align: center; cursor: pointer;
+      transition: all .15s;
+    }
+    .upload-zone:hover { border-color: var(--g400); background: var(--g50); }
+    .upload-icon { font-size: 28px; margin-bottom: 8px; }
+    .upload-text { font-size: 13px; color: var(--muted); }
+    .upload-text strong { color: var(--g600); }
+
+    .btn {
+      padding: 8px 16px; border-radius: 7px;
+      font-size: 13px; font-weight: 600; font-family: var(--font);
+      cursor: pointer; border: none; transition: all .12s;
+    }
+    .btn-primary { background: var(--g600); color: #fff; }
+    .btn-primary:hover { background: var(--g800); }
+    .btn-outline { background: none; color: var(--muted); border: 1px solid var(--border); }
+    .btn-outline:hover { background: var(--bg); color: var(--text); }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+
+    .form-field label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+    .form-field select, .form-field input {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid var(--border); border-radius: 7px;
+      font-size: 13px; font-family: var(--font);
+      background: var(--surface); color: var(--text); outline: none;
+    }
+    .form-field select:focus, .form-field input:focus { border-color: var(--g400); }
+
+    .status-notice {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--g50); border-radius: 8px;
+      padding: 10px 14px; font-size: 12px; color: var(--g800);
+      margin-bottom: 1rem;
+    }
+
+    .loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 200px; color: var(--muted); font-size: 13px; gap: 8px;
+    }
+
+    @media (max-width: 700px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg viewBox="0 0 22 22" fill="none">
+          <path d="M11 2C7 2 4 5.5 4 9c0 2.5 1.2 4.2 3 5.5L11 19l4-4.5c1.8-1.3 3-3 3-5.5 0-3.5-3-7-7-7z" fill="white" opacity=".9"/>
+          <circle cx="11" cy="9" r="2.5" fill="white" opacity=".55"/>
+        </svg>
+      </div>
+      <div>
+        <div class="login-logo-text">Kiebitz</div>
+        <div class="login-logo-sub">Naturschutz-Dashboard</div>
+      </div>
+    </div>
+
+    <div class="login-heading">Anmelden</div>
+    <div class="login-sub">Zugang für Projektpartner und Administratoren</div>
+
+    <div class="field">
+      <label>E-Mail</label>
+      <input type="text" id="login-email" placeholder="name@unternehmen.de" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label>Passwort</label>
+      <input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+
+    <button class="btn-login" id="login-btn" onclick="doLogin()">Anmelden</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <nav class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <div class="topbar-logo-icon">
+          <svg viewBox="0 0 17 17" fill="none">
+            <path d="M8.5 1.5C5.5 1.5 3 4.2 3 7c0 2 1 3.3 2.4 4.3L8.5 15l3.1-3.7c1.4-1 2.4-2.3 2.4-4.3 0-2.8-2.5-5.5-5.5-5.5z" fill="white" opacity=".9"/>
+            <circle cx="8.5" cy="7" r="2" fill="white" opacity=".55"/>
+          </svg>
+        </div>
+        <span class="topbar-logo-name">Kiebitz</span>
+      </div>
+
+      <div class="nav">
+        <button class="nav-btn active" onclick="showPage('dashboard', this)">Dashboard</button>
+        <button class="nav-btn" onclick="showPage('massnahmen', this)">Maßnahmen</button>
+        <button class="nav-btn" id="admin-nav" style="display:none" onclick="showPage('admin', this)">Admin</button>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="region-switcher" id="region-switcher">
+        <button class="region-btn active" onclick="switchRegion(0, this)">Wolfenbüttel</button>
+        <button class="region-btn" onclick="switchRegion(1, this)">Ostwestfalen</button>
+      </div>
+      <div class="user-avatar" id="user-avatar">JM</div>
+      <button class="btn-logout" onclick="doLogout()">Abmelden</button>
+    </div>
+  </nav>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="main">
+      <div class="page-header">
+        <div class="page-title" id="dash-title">Wolfenbüttel – Nachhaltige Zuckerproduktion</div>
+        <div class="page-sub" id="dash-sub">Saison 2024/25 · Jägermeister</div>
+      </div>
+
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="loading">Daten werden geladen…</div>
+      </div>
+
+      <div class="card budget-wrap" style="margin-bottom:1rem;">
+        <div class="card-title">Budgetaufteilung</div>
+        <div class="budget-meta">
+          <span>Gesamtbudget: <strong id="budget-total">500.000 €</strong></span>
+          <span id="budget-pct-label">–</span>
+        </div>
+        <div class="budget-track" id="budget-track">
+          <div class="budget-seg" style="width:0%; background:var(--g600)" id="seg-abg"></div>
+          <div class="budget-seg" style="width:0%; background:var(--g200)" id="seg-beant"></div>
+          <div class="budget-seg" style="width:100%; background:var(--gr50)" id="seg-frei"></div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--g600)"></div>Abgesendet</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--g200)"></div>Beantragt</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gr50); border:1px solid var(--border)"></div>Verfügbar</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Maßnahmenflächen (ha)</div>
+          <div id="measures-list"><div class="loading">…</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Karte – Maßnahmenflächen</div>
+          <div class="map-box" id="map-box">
+            <div class="loading">Karte wird geladen…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">CO₂-Einsparung nach Maßnahme (t / Jahr)</div>
+        <div style="position:relative; height:180px;">
+          <canvas id="co2-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MASSNAHMEN -->
+  <div class="page" id="page-massnahmen">
+    <div class="main">
+      <div class="page-header">
+        <div class="page-title">Maßnahmen</div>
+        <div class="page-sub" id="massnahmen-sub">Wolfenbüttel · 2024/25</div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Maßnahme</th>
+                <th>Landwirt</th>
+                <th>Fläche</th>
+                <th>Prämie (€)</th>
+                <th>Status</th>
+                <th>CO₂ t/a</th>
+                <th>Eco Score</th>
+              </tr>
+            </thead>
+            <tbody id="massnahmen-tbody">
+              <tr><td colspan="7" class="loading">Daten werden geladen…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="page" id="page-admin">
+    <div class="main">
+      <div class="page-header">
+        <div class="page-title">Admin – Datenpflege</div>
+        <div class="page-sub">Nur für Kiebitz-Team</div>
+      </div>
+
+      <div class="status-notice">
+        <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" stroke="var(--g600)" stroke-width="1.5" fill="none"/><path d="M4.5 7l2 2 3-3" stroke="var(--g600)" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+        Verbunden mit Supabase · Änderungen werden sofort gespeichert
+      </div>
+
+      <div class="grid-2" style="margin-bottom:1rem;">
+        <div class="card">
+          <div class="card-title">Excel / CSV hochladen</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Wolfenbüttel</div>
+              <div class="upload-zone" onclick="document.getElementById('upload-wb').click()">
+                <input type="file" id="upload-wb" accept=".xlsx,.csv" style="display:none" onchange="handleUpload('wolfenbuettel', this)">
+                <div class="upload-icon">📊</div>
+                <div class="upload-text"><strong>Datei auswählen</strong> oder hierher ziehen</div>
+                <div class="upload-text" style="margin-top:3px;font-size:11px;">.xlsx · .csv</div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Ostwestfalen</div>
+              <div class="upload-zone" onclick="document.getElementById('upload-owf').click()">
+                <input type="file" id="upload-owf" accept=".xlsx,.csv" style="display:none" onchange="handleUpload('ostwestfalen', this)">
+                <div class="upload-icon">📊</div>
+                <div class="upload-text"><strong>Datei auswählen</strong> oder hierher ziehen</div>
+                <div class="upload-text" style="margin-top:3px;font-size:11px;">.xlsx · .csv</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Nutzer & Zugänge – Jägermeister</div>
+          <table>
+            <thead><tr><th>Name</th><th>Rolle</th><th>Zugang</th></tr></thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="3" style="color:var(--muted);font-size:12px;">Wird geladen…</td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top:12px;">
+            <button class="btn btn-primary" onclick="sendPrompt('Ich möchte einen neuen Jägermeister-Nutzer im Kiebitz Dashboard anlegen. Was brauche ich dafür?')">+ Nutzer einladen ↗</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Maßnahme manuell eintragen</div>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Region</label>
+            <select id="form-region">
+              <option value="">Auswählen…</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Maßnahmentyp</label>
+            <select id="form-typ">
+              <option value="">Auswählen…</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Landwirt</label>
+            <input type="text" id="form-landwirt" placeholder="z.B. Hof Müller" />
+          </div>
+          <div class="form-field">
+            <label>Fläche (ha)</label>
+            <input type="number" id="form-ha" placeholder="z.B. 12.5" step="0.1" min="0" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" onclick="saveMassnahme()">Speichern</button>
+          <button class="btn btn-outline" onclick="clearForm()">Leeren</button>
+        </div>
+        <div id="form-msg" style="margin-top:8px;font-size:12px;display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://luwdxrewuetqsupkzllr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_aUHg2wxR4QeufymQnOqE0A_NsBP4hFv';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentProfile = null;
+let regions = [];
+let typen = [];
+let currentRegionIdx = 0;
+let co2ChartInst = null;
+
+// ── AUTH ──
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Anmelden…';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if (error) {
+    err.textContent = 'Anmeldung fehlgeschlagen: ' + error.message;
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Anmelden';
+    return;
+  }
+  currentUser = data.user;
+  await initApp();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').textContent = 'Anmelden';
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session) {
+    currentUser = session.user;
+    initApp();
+  }
+});
+
+async function initApp() {
+  const { data: profile } = await sb.from('profile').select('*').eq('id', currentUser.id).single();
+  currentProfile = profile;
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  const initials = currentUser.email.substring(0, 2).toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+
+  if (currentProfile?.rolle === 'admin') {
+    document.getElementById('admin-nav').style.display = 'inline-block';
+  }
+
+  const { data: reg } = await sb.from('regionen').select('*').order('name');
+  regions = reg || [];
+
+  const { data: typ } = await sb.from('massnahmen_typen').select('*').order('name');
+  typen = typ || [];
+
+  populateFormSelects();
+  await loadDashboard();
+  await loadUsers();
+}
+
+// ── NAVIGATION ──
+function showPage(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (el) el.classList.add('active');
+  if (page === 'massnahmen') loadMassnahmen();
+}
+
+function switchRegion(idx, el) {
+  currentRegionIdx = idx;
+  document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  loadDashboard();
+  document.getElementById('massnahmen-sub').textContent = (regions[idx]?.name || '') + ' · 2024/25';
+  if (document.getElementById('page-massnahmen').classList.contains('active')) loadMassnahmen();
+}
+
+// ── DASHBOARD ──
+async function loadDashboard() {
+  if (!regions.length) return;
+  const region = regions[currentRegionIdx];
+  if (!region) return;
+
+  document.getElementById('dash-title').textContent = region.name + ' – ' + (region.beschreibung || '');
+  document.getElementById('dash-sub').textContent = 'Saison ' + region.saison + ' · Jägermeister';
+
+  const { data: massnahmen } = await sb.from('massnahmen')
+    .select('*, massnahmen_typen(*)')
+    .eq('region_id', region.id);
+
+  const m = massnahmen || [];
+  const haTotal = m.reduce((s, x) => s + (x.flaeche_ha || 0), 0);
+  const praemieTotal = m.reduce((s, x) => s + ((x.flaeche_ha || 0) * (x.massnahmen_typen?.praemie_pro_ha || 0)), 0);
+  const co2Total = m.reduce((s, x) => s + ((x.flaeche_ha || 0) * (x.massnahmen_typen?.co2_pro_ha || 0)), 0);
+  const ecoTotal = m.reduce((s, x) => s + ((x.flaeche_ha || 0) * (x.massnahmen_typen?.eco_score_pro_ha || 0)), 0);
+  const budget = 500000;
+  const abg = m.filter(x => x.status === 'abgesendet').reduce((s, x) => s + ((x.flaeche_ha||0)*(x.massnahmen_typen?.praemie_pro_ha||0)), 0);
+  const beant = m.filter(x => x.status === 'beantragt').reduce((s, x) => s + ((x.flaeche_ha||0)*(x.massnahmen_typen?.praemie_pro_ha||0)), 0);
+
+  renderKPIs(haTotal, praemieTotal, co2Total, ecoTotal);
+  renderBudget(budget, abg, beant);
+  renderMeasures(m);
+  renderMap(m, region);
+  renderCO2Chart(m);
+}
+
+function renderKPIs(ha, praemie, co2, eco) {
+  const budget = 500000;
+  document.getElementById('kpi-grid').innerHTML = [
+    { label: 'Abgerufene Mittel', value: formatEuro(praemie), unit: 'von 500.000 € Budget', bar: Math.round(praemie/budget*100) },
+    { label: 'Eingesparte t CO₂', value: Math.round(co2) + ' t', unit: 't CO₂ pro Jahr', bar: Math.min(100, Math.round(co2/1000*100)) },
+    { label: 'Maßnahmenfläche', value: Math.round(ha) + ' ha', unit: 'aktive Flächen', bar: Math.min(100, Math.round(ha/900*100)) },
+    { label: 'Eco Score', value: Math.round(eco).toLocaleString('de'), unit: 'Punkte gesamt', bar: Math.min(100, Math.round(eco/3000*100)) }
+  ].map(k => `
+    <div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-unit">${k.unit}</div>
+      <div class="kpi-progress"><div class="kpi-bar" style="width:${k.bar}%"></div></div>
+    </div>
+  `).join('');
+}
+
+function renderBudget(budget, abg, beant) {
+  const pAbg = Math.round(abg/budget*100);
+  const pBeant = Math.round(beant/budget*100);
+  const pFrei = 100 - pAbg - pBeant;
+  document.getElementById('seg-abg').style.width = pAbg + '%';
+  document.getElementById('seg-abg').textContent = pAbg > 7 ? pAbg + '%' : '';
+  document.getElementById('seg-beant').style.width = pBeant + '%';
+  document.getElementById('seg-beant').textContent = pBeant > 7 ? pBeant + '%' : '';
+  document.getElementById('seg-frei').style.width = Math.max(0, pFrei) + '%';
+  document.getElementById('budget-pct-label').textContent = (pAbg + pBeant) + ' % abgerufen';
+}
+
+function renderMeasures(m) {
+  const byTyp = {};
+  m.forEach(x => {
+    const n = x.massnahmen_typen?.name || 'Unbekannt';
+    byTyp[n] = (byTyp[n] || { ha: 0, farbe: x.massnahmen_typen?.farbe || '#888' });
+    byTyp[n].ha += x.flaeche_ha || 0;
+  });
+  const items = Object.entries(byTyp).sort((a,b) => b[1].ha - a[1].ha);
+  const maxHa = Math.max(...items.map(i => i[1].ha), 1);
+
+  document.getElementById('measures-list').innerHTML = items.map(([name, d]) => `
+    <div class="measure-row">
+      <div class="measure-dot" style="background:${d.farbe}"></div>
+      <div class="measure-name">${name}</div>
+      <div class="measure-track"><div class="measure-fill" style="width:${Math.round(d.ha/maxHa*100)}%;background:${d.farbe}"></div></div>
+      <div class="measure-ha">${Math.round(d.ha)} ha</div>
+    </div>
+  `).join('');
+}
+
+function renderMap(m, region) {
+  const box = document.getElementById('map-box');
+  const withCoords = m.filter(x => x.lat && x.lng);
+
+  if (!withCoords.length) {
+    box.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:13px;">
+      <div style="font-size:24px;margin-bottom:8px;">📍</div>
+      ${region.name}<br>
+      <span style="font-size:11px">${m.length} Maßnahmen · ${Math.round(m.reduce((s,x)=>s+x.flaeche_ha,0))} ha</span><br>
+      <button class="map-open-btn" style="margin-top:10px;" onclick="openMap()">In OpenStreetMap öffnen</button>
+    </div>`;
+    return;
+  }
+
+  const lats = withCoords.map(x => x.lat);
+  const lngs = withCoords.map(x => x.lng);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  const padLat = (maxLat - minLat) * 0.15 || 0.05;
+  const padLng = (maxLng - minLng) * 0.15 || 0.05;
+
+  const toX = lng => Math.round((lng - (minLng - padLng)) / ((maxLng + padLng) - (minLng - padLng)) * 100);
+  const toY = lat => Math.round(100 - (lat - (minLat - padLat)) / ((maxLat + padLat) - (minLat - padLat)) * 100);
+
+  box.innerHTML = `
+    <div style="position:absolute;inset:0;">
+      ${withCoords.map(x => `
+        <div class="map-pin" style="left:${toX(x.lng)}%;top:${toY(x.lat)}%;background:${x.massnahmen_typen?.farbe||'var(--g600)'}"></div>
+        <div class="map-pin-label" style="left:${toX(x.lng)+2}%;top:${Math.max(0,toY(x.lat)-18)}px">${x.massnahmen_typen?.name} · ${x.flaeche_ha} ha</div>
+      `).join('')}
+    </div>
+    <div style="position:absolute;bottom:10px;left:12px;font-size:11px;color:var(--g800);font-weight:500;">${region.name} · ${m.length} Betriebe</div>
+    <button class="map-open-btn" onclick="openMap()">OpenStreetMap öffnen</button>
+  `;
+}
+
+function openMap() {
+  const region = regions[currentRegionIdx];
+  const q = encodeURIComponent(region.name + ', Deutschland');
+  window.open('https://www.openstreetmap.org/search?query=' + q, '_blank');
+}
+
+function renderCO2Chart(m) {
+  const byTyp = {};
+  m.forEach(x => {
+    const n = x.massnahmen_typen?.name || 'Unbekannt';
+    if (!byTyp[n]) byTyp[n] = { co2: 0, farbe: x.massnahmen_typen?.farbe || '#888' };
+    byTyp[n].co2 += (x.flaeche_ha || 0) * (x.massnahmen_typen?.co2_pro_ha || 0);
+  });
+  const items = Object.entries(byTyp).sort((a,b) => b[1].co2 - a[1].co2);
+  if (co2ChartInst) { co2ChartInst.destroy(); co2ChartInst = null; }
+  const ctx = document.getElementById('co2-chart').getContext('2d');
+  co2ChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: items.map(i => i[0]),
+      datasets: [{
+        data: items.map(i => Math.round(i[1].co2 * 10) / 10),
+        backgroundColor: items.map(i => i[1].farbe),
+        borderRadius: 5,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// ── MASSNAHMEN PAGE ──
+async function loadMassnahmen() {
+  if (!regions.length) return;
+  const region = regions[currentRegionIdx];
+  document.getElementById('massnahmen-sub').textContent = region.name + ' · ' + region.saison;
+
+  const { data } = await sb.from('massnahmen')
+    .select('*, massnahmen_typen(*)')
+    .eq('region_id', region.id)
+    .order('created_at', { ascending: false });
+
+  const m = data || [];
+  document.getElementById('massnahmen-tbody').innerHTML = m.length ? m.map(x => `
+    <tr>
+      <td><strong>${x.massnahmen_typen?.name || '–'}</strong></td>
+      <td>${x.landwirt_name}</td>
+      <td>${x.flaeche_ha} ha</td>
+      <td>${formatEuro((x.flaeche_ha||0) * (x.massnahmen_typen?.praemie_pro_ha||0))}</td>
+      <td><span class="tag ${x.status==='abgesendet'?'tag-green':'tag-amber'}">${x.status}</span></td>
+      <td>${Math.round((x.flaeche_ha||0) * (x.massnahmen_typen?.co2_pro_ha||0) * 10)/10}</td>
+      <td>${Math.round((x.flaeche_ha||0) * (x.massnahmen_typen?.eco_score_pro_ha||0) * 10)/10}</td>
+    </tr>
+  `).join('') : '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:2rem;">Keine Maßnahmen vorhanden</td></tr>';
+}
+
+// ── ADMIN ──
+async function loadUsers() {
+  const { data } = await sb.from('profile').select('*');
+  const users = data || [];
+  document.getElementById('users-tbody').innerHTML = users.length ? users.map(u => `
+    <tr>
+      <td>${u.name || u.id.substring(0,8)}</td>
+      <td><span class="tag ${u.rolle==='admin'?'tag-teal':'tag-green'}">${u.rolle}</span></td>
+      <td>${u.regionen_zugang ? 'Eingeschränkt' : 'Alle Regionen'}</td>
+    </tr>
+  `).join('') : '<tr><td colspan="3" style="color:var(--muted);">Keine Nutzer gefunden</td></tr>';
+}
+
+function populateFormSelects() {
+  const rs = document.getElementById('form-region');
+  rs.innerHTML = '<option value="">Auswählen…</option>' + regions.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+  const ts = document.getElementById('form-typ');
+  ts.innerHTML = '<option value="">Auswählen…</option>' + typen.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+async function saveMassnahme() {
+  const region_id = document.getElementById('form-region').value;
+  const typ_id = document.getElementById('form-typ').value;
+  const landwirt_name = document.getElementById('form-landwirt').value.trim();
+  const flaeche_ha = parseFloat(document.getElementById('form-ha').value);
+  const msg = document.getElementById('form-msg');
+
+  if (!region_id || !typ_id || !landwirt_name || !flaeche_ha) {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--r600)';
+    msg.textContent = 'Bitte alle Felder ausfüllen.';
+    return;
+  }
+
+  const { error } = await sb.from('massnahmen').insert({ region_id, typ_id, landwirt_name, flaeche_ha, status: 'beantragt' });
+  if (error) {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--r600)';
+    msg.textContent = 'Fehler: ' + error.message;
+  } else {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--g600)';
+    msg.textContent = 'Maßnahme gespeichert!';
+    clearForm();
+    loadDashboard();
+  }
+}
+
+function clearForm() {
+  document.getElementById('form-region').value = '';
+  document.getElementById('form-typ').value = '';
+  document.getElementById('form-landwirt').value = '';
+  document.getElementById('form-ha').value = '';
+  document.getElementById('form-msg').style.display = 'none';
+}
+
+function handleUpload(region, input) {
+  alert('Upload für ' + region + ' erkannt: ' + input.files[0]?.name + '\n\nIn der nächsten Version wird die Excel-Datei automatisch eingelesen und die Daten direkt in Supabase importiert.');
+}
+
+function formatEuro(n) {
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Math.round(n));
+}
+
+function sendPrompt(text) {
+  if (window.parent && window.parent.postMessage) {
+    window.parent.postMessage({ type: 'sendPrompt', text }, '*');
+  }
+}
+</script>
+</body>
+</html>
