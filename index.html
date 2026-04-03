@@ -635,7 +635,8 @@ async function initApp() {
     document.getElementById('admin-nav').style.display = 'inline-block';
   }
 
-  const { data: reg } = await sb.from('regionen').select('*').order('name');
+  const { data: reg } = await sb.from('regionen').select('*');
+if (reg) reg.sort((a, b) => a.name.includes('Wolfenb') ? -1 : b.name.includes('Wolfenb') ? 1 : a.name.localeCompare(b.name));
   regions = reg || [];
 
   const { data: typ } = await sb.from('massnahmen_typen').select('*').order('name');
