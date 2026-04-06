@@ -1002,7 +1002,10 @@ async function hulaGet(path) {
       'apikey': HULA_ANON_KEY,
     }
   });
-  if (!res.ok) throw new Error(res.status + ' ' + path);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`${res.status} ${path}: ${body.substring(0, 100)}`);
+  }
   return res.json();
 }
 
@@ -1139,7 +1142,7 @@ async function loadHulaChart(projectUuid, metric) {
     });
 
   } catch(e) {
-    if (loadingEl) { loadingEl.style.display = 'flex'; loadingEl.textContent = 'Proxy nicht verfügbar'; }
+    if (loadingEl) { loadingEl.style.display = 'flex'; loadingEl.textContent = 'Fehler: ' + e.message; }
   }
 }
 
