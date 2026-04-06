@@ -1062,34 +1062,24 @@ async function loadHulaChart(projectUuid, metric) {
 
     if (!data) { if (loadingEl) loadingEl.textContent = 'Keine Daten verfügbar'; return; }
 
-    // Debug: echtes Format anzeigen falls keine values
-    console.log('Hula timeline response:', JSON.stringify(data).substring(0, 300));
-
-    // Daten extrahieren — verschiedene Formate unterstützen
+    // Hula Format: [{"label":"total","values":[{"value":0.99,"date":"2024-05-01"}, ...]}]
     let rawValues = null;
-    if (Array.isArray(data)) rawValues = data;
-    else if (Array.isArray(data.values)) rawValues = data.values;
-    else if (Array.isArray(data.data)) rawValues = data.data;
-    else if (Array.isArray(data.results)) rawValues = data.results;
-    else if (Array.isArray(data.timeline)) rawValues = data.timeline;
+    if (Array.isArray(data)) {
+      // Nimm den "total" Eintrag oder ersten Eintrag
+      const entry = data.find(d => d.label === 'total') || data[0];
+      if (entry?.values) rawValues = entry.values;
+    } else if (Array.isArray(data.values)) {
+      rawValues = data.values;
+    }
 
     if (!rawValues || !rawValues.length) {
-      if (loadingEl) loadingEl.textContent = 'Format unbekannt: ' + JSON.stringify(data).substring(0, 80);
+      if (loadingEl) loadingEl.textContent = 'Keine Daten verfügbar';
       return;
     }
 
     const points = rawValues
-      .filter(v => v != null)
-      .map(v => {
-        if (typeof v === 'number') return { value: v, date: null };
-        if (typeof v === 'object') {
-          const val = v.value ?? v.val ?? v.ndvi ?? v.lai ?? v.evi ?? v.ndwi ?? v.ndwi_gao ?? v.y;
-          const date = v.date ?? v.timestamp ?? v.time ?? v.x ?? v.datetime;
-          return { value: val, date };
-        }
-        return null;
-      })
-      .filter(v => v && v.value != null && !isNaN(v.value));
+      .filter(v => v != null && v.value != null && !isNaN(v.value))
+      .map(v => ({ value: v.value, date: v.date }));
 
     if (!points.length) { if (loadingEl) loadingEl.textContent = 'Keine Daten verfügbar'; return; }
 
