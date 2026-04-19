@@ -566,12 +566,12 @@
   <div class="page active" id="page-dashboard">
     <div class="main">
       <div class="page-header">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-          <div>
-            <div class="page-title" id="dash-title">Wolfenbüttel – Nachhaltige Zuckerproduktion</div>
-            <div class="page-sub" id="dash-sub">Saison 2024/25 · Jägermeister</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:16px;">
+          <div style="min-width:0;flex:1;">
+            <div class="page-title" id="dash-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Wolfenbüttel – Nachhaltige Zuckerproduktion</div>
+            <div class="page-sub" id="dash-sub">Saison 2025/26</div>
           </div>
-          <div class="region-switcher" id="region-switcher" style="margin-top:6px;margin-right:320px;">
+          <div class="region-switcher" id="region-switcher" style="flex-shrink:0;">
             <button class="region-btn active" onclick="switchRegion(0, this)">Wolfenbüttel</button>
             <button class="region-btn" onclick="switchRegion(1, this)">Ostwestfalen</button>
           </div>
@@ -632,7 +632,7 @@
     <div class="main">
       <div class="page-header">
         <div class="page-title">Maßnahmen</div>
-        <div class="page-sub" id="massnahmen-sub">Wolfenbüttel · 2024/25</div>
+        <div class="page-sub" id="massnahmen-sub">Wolfenbüttel · 2025/26</div>
       </div>
       <div class="card">
         <div class="table-wrap">
@@ -1343,7 +1343,7 @@ function switchRegion(idx, el) {
   document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   loadDashboard();
-  document.getElementById('massnahmen-sub').textContent = (regions[idx]?.name || '') + ' · 2024/25';
+  document.getElementById('massnahmen-sub').textContent = (regions[idx]?.name || '') + ' · 2025/26';
   if (document.getElementById('page-massnahmen').classList.contains('active')) {
     loadMassnahmen();
     // Karte nach Regionswechsel neu berechnen
@@ -1374,7 +1374,7 @@ async function loadDashboard() {
   if (!region) return;
 
   document.getElementById('dash-title').textContent = region.name + ' – ' + (region.beschreibung || '');
-  document.getElementById('dash-sub').textContent = 'Saison ' + region.saison + ' · Jägermeister';
+  document.getElementById('dash-sub').textContent = 'Saison 2025/26';
 
   const { data: massnahmen } = await sb.from('massnahmen')
     .select('*, massnahmen_typen(*)')
@@ -1792,7 +1792,7 @@ function renderCO2Chart(m) {
 async function loadMassnahmen() {
   if (!regions.length) return;
   const region = regions[currentRegionIdx];
-  document.getElementById('massnahmen-sub').textContent = region.name + ' · ' + region.saison;
+  document.getElementById('massnahmen-sub').textContent = region.name + ' · 2025/26';
 
   const { data } = await sb.from('massnahmen')
     .select('*, massnahmen_typen(*)')
