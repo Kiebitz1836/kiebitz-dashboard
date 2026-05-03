@@ -475,7 +475,7 @@
     <div class="main">
       <div class="page-header">
         <div class="page-title" id="dash-title">Wolfenbüttel – Nachhaltige Zuckerproduktion</div>
-        <div class="page-sub" id="dash-sub">Saison 2024/25 · Jägermeister</div>
+        <div class="page-sub" id="dash-sub">Saison 2025/26 · Jägermeister</div>
       </div>
 
       <div class="kpi-grid" id="kpi-grid">
@@ -532,7 +532,7 @@
     <div class="main">
       <div class="page-header">
         <div class="page-title">Maßnahmen</div>
-        <div class="page-sub" id="massnahmen-sub">Wolfenbüttel · 2024/25</div>
+        <div class="page-sub" id="massnahmen-sub">Wolfenbüttel · 2025/26</div>
       </div>
       <div class="card">
         <div class="table-wrap">
@@ -769,7 +769,7 @@ function switchRegion(idx, el) {
   document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   loadDashboard();
-  document.getElementById('massnahmen-sub').textContent = (regions[idx]?.name || '') + ' · 2024/25';
+  document.getElementById('massnahmen-sub').textContent = (regions[idx]?.name || '') + ' · 2025/26';
   if (document.getElementById('page-massnahmen').classList.contains('active')) loadMassnahmen();
 }
 
