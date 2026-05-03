@@ -401,6 +401,8 @@
       .form-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
+  <script src="https://d1je4ghifz6xjx.cloudfront.net/widget/v2/hula-platform-widget-loader.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -450,20 +452,21 @@
         <button class="nav-btn active" onclick="showPage('dashboard', this)">Dashboard</button>
         <button class="nav-btn" onclick="showPage('massnahmen', this)">Maßnahmen</button>
         <button class="nav-btn" id="admin-nav" style="display:none" onclick="showPage('admin', this)">Admin</button>
+        <button class="nav-btn" id="biodiv-nav" onclick="showPage('biodiversitaet', this)">Biodiversität</button>
       </div>
     </div>
 
     <div class="topbar-right">
-      <div class="region-switcher" id="region-switcher">
-        <button class="region-btn active" onclick="switchRegion(0, this)">Wolfenbüttel</button>
-        <button class="region-btn" onclick="switchRegion(1, this)">Ostwestfalen</button>
-      </div>
       <div id="kunde-logo-wrap" style="display:flex;align-items:center;padding:0 8px;border-right:0.5px solid var(--border);margin-right:4px;">
         <span style="font-size:13px;font-weight:600;color:var(--text);">Jägermeister</span>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;margin-right:6px;">
-        <div class="user-avatar" id="user-avatar" style="margin-bottom:0;">JM</div>
-        <span id="user-name-display" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:1px;"></span>
+      <div style="display:flex;align-items:center;gap:8px;margin-right:4px;">
+        <div class="user-avatar" id="user-avatar">AN</div>
+        <div style="display:flex;flex-direction:column;justify-content:center;">
+          <span id="user-name-display" style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;"></span>
+          <span id="user-role-display" style="font-size:10px;color:var(--muted);white-space:nowrap;"></span>
+        </div>
+        <span style="color:var(--border);font-size:16px;">∨</span>
       </div>
       <button class="btn-logout" onclick="showChangePassword()" style="margin-right:4px;">Passwort</button>
       <button class="btn-logout" onclick="doLogout()">Abmelden</button>
@@ -474,8 +477,16 @@
   <div class="page active" id="page-dashboard">
     <div class="main">
       <div class="page-header">
-        <div class="page-title" id="dash-title">Wolfenbüttel – Nachhaltige Zuckerproduktion</div>
-        <div class="page-sub" id="dash-sub">Saison 2025/26 · Jägermeister</div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div class="page-title" id="dash-title">Wolfenbüttel – Nachhaltige Zuckerproduktion</div>
+            <div class="page-sub" id="dash-sub">Saison 2025/26</div>
+          </div>
+          <div class="region-switcher" id="region-switcher" style="margin-top:6px;">
+            <button class="region-btn active" onclick="switchRegion(0, this)">Wolfenbüttel</button>
+            <button class="region-btn" onclick="switchRegion(1, this)">Ostwestfalen</button>
+          </div>
+        </div>
       </div>
 
       <div class="kpi-grid" id="kpi-grid">
@@ -554,6 +565,93 @@
           </table>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- BIODIVERSITÄT -->
+  <div class="page" id="page-biodiversitaet">
+    <div class="main">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div class="page-title">Biodiversitätsmessung</div>
+            <div class="page-sub">Ökosystemleistungen · Hula Earth · 14 Betriebe</div>
+          </div>
+          <a href="https://platform.hula.earth/dashboard/ecosystem" target="_blank"
+             style="font-size:12px;color:var(--g600);text-decoration:none;padding:5px 12px;
+                    border:1px solid var(--g300);border-radius:20px;">↗ Hula öffnen</a>
+        </div>
+      </div>
+
+      <!-- Betrieb-Tabs -->
+      <div id="hula-project-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;">
+        <button id="tab-0" onclick="loadHulaProject('02b90ad4-8ff2-4f1f-8465-4d14257bebe9', this, 0)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:var(--g600);color:#fff;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Angerstein</button>
+        <button id="tab-1" onclick="loadHulaProject('1e53bbac-477d-4959-ae14-28414dd3496c', this, 1)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Bähr</button>
+        <button id="tab-2" onclick="loadHulaProject('2e194385-b217-49e8-afc9-56fd483f7181', this, 2)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Besenroth</button>
+        <button id="tab-3" onclick="loadHulaProject('27a76e8d-4dd4-4431-86de-4a99280bb4d2', this, 3)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Feigel</button>
+        <button id="tab-4" onclick="loadHulaProject('e6fb74d0-81b4-417d-8814-f8ba7cf1a25e', this, 4)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Hantelmann</button>
+        <button id="tab-5" onclick="loadHulaProject('dbd45ea5-4ae7-46d0-80bd-06554b6d0229', this, 5)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Heise</button>
+        <button id="tab-6" onclick="loadHulaProject('f910392b-d68d-4d86-a969-277a556236ba', this, 6)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">J. Loebbecke</button>
+        <button id="tab-7" onclick="loadHulaProject('b11a693e-da92-4a53-894e-237a91890d29', this, 7)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Münchhausen</button>
+        <button id="tab-8" onclick="loadHulaProject('fd0d15dc-609a-4600-bd62-afd4ab89e458', this, 8)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Okerland</button>
+        <button id="tab-9" onclick="loadHulaProject('0e9a8ca3-3b97-438b-9710-35344393182f', this, 9)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Schlüter</button>
+        <button id="tab-10" onclick="loadHulaProject('334b2dbf-367e-4530-b905-363c735766b8', this, 10)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Schulte Uemmingen</button>
+        <button id="tab-11" onclick="loadHulaProject('4355446e-d996-4f6c-868d-2e316e4d7192', this, 11)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Schulzendorff</button>
+        <button id="tab-12" onclick="loadHulaProject('fe6f0980-3e13-4842-bb8a-c37c0c3a4072', this, 12)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Veltheim</button>
+        <button id="tab-13" onclick="loadHulaProject('0bc87dcd-e99b-4b82-9dbd-63fefba19807', this, 13)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--g300);background:#fff;color:var(--g700);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">Wätjen</button>
+      </div>
+
+      <!-- Hula Widget -->
+      <div class="card" style="padding:0;overflow:hidden;min-height:500px;">
+        <div id="hula-widget-container" style="width:100%;min-height:500px;">
+          <div style="display:flex;align-items:center;justify-content:center;
+                      height:300px;color:var(--muted);font-size:13px;">
+            Wird geladen…
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Chart -->
+      <div class="card" style="padding:20px;margin-top:1rem;" id="hula-chart-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div class="card-title" style="margin:0;" id="hula-chart-title">Belaubungsdichte im Verlauf</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="hula-chart-subtitle">LAI · Wird geladen…</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button onclick="setHulaMetric('lai', 'Belaubungsdichte', this)"
+              style="padding:4px 12px;border-radius:20px;border:none;background:var(--g600);
+                     color:#fff;font-size:12px;cursor:pointer;">LAI</button>
+            <button onclick="setHulaMetric('ndvi', 'Vegetationsindex', this)"
+              style="padding:4px 12px;border-radius:20px;border:1px solid var(--g300);
+                     background:#fff;color:var(--g700);font-size:12px;cursor:pointer;">NDVI</button>
+            <button onclick="setHulaMetric('evi', 'Erw. Vegetationsindex', this)"
+              style="padding:4px 12px;border-radius:20px;border:1px solid var(--g300);
+                     background:#fff;color:var(--g700);font-size:12px;cursor:pointer;">EVI</button>
+            <button onclick="setHulaMetric('ndwi_gao', 'Wassergehalt', this)"
+              style="padding:4px 12px;border-radius:20px;border:1px solid var(--g300);
+                     background:#fff;color:var(--g700);font-size:12px;cursor:pointer;">NDWI</button>
+          </div>
+        </div>
+        <div style="position:relative;height:260px;">
+          <canvas id="hula-chart"></canvas>
+          <div id="hula-chart-loading" style="position:absolute;inset:0;display:flex;
+               align-items:center;justify-content:center;font-size:13px;color:var(--muted);">
+            Proxy wird benötigt…
+          </div>
+        </div>
+        <div style="display:flex;gap:20px;margin-top:10px;font-size:11px;color:var(--muted);">
+          <span style="display:flex;align-items:center;gap:5px;">
+            <span style="width:14px;height:3px;background:#526F6B;border-radius:2px;display:inline-block;"></span>
+            Alle Flächen
+          </span>
+          <span style="display:flex;align-items:center;gap:5px;">
+            <span style="width:14px;height:3px;background:#CAA847;border-radius:2px;display:inline-block;border-top:2px dashed #CAA847;"></span>
+            Gleitender Durchschnitt
+          </span>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -695,6 +793,132 @@ async function doLogin() {
   await initApp();
 }
 
+
+const HULA_API_KEY = 'hula-MAOqQozVs4Hnq17l6sENbrc9NdJQ3XPj';
+const HULA_BASE = 'https://api.hula.earth';
+let HULA_ORG_UUID = null;
+function hulaHeaders() {
+  const h = { 'Authorization': `Bearer ${HULA_API_KEY}`, 'Content-Type': 'application/json' };
+  if (HULA_ORG_UUID) h['X-Org'] = HULA_ORG_UUID;
+  return h;
+}
+async function hulaGet(path) {
+  const res = await fetch(HULA_BASE + path, { headers: hulaHeaders() });
+  if (!res.ok) throw new Error(res.status + ' ' + path);
+  return res.json();
+}
+function getItems(data) {
+  if (Array.isArray(data)) return data;
+  return data?.results || data?.data || data?.projects || data?.items || [];
+}
+
+const HULA_UUIDS = ["02b90ad4-8ff2-4f1f-8465-4d14257bebe9", "1e53bbac-477d-4959-ae14-28414dd3496c", "2e194385-b217-49e8-afc9-56fd483f7181", "27a76e8d-4dd4-4431-86de-4a99280bb4d2", "e6fb74d0-81b4-417d-8814-f8ba7cf1a25e", "dbd45ea5-4ae7-46d0-80bd-06554b6d0229", "f910392b-d68d-4d86-a969-277a556236ba", "b11a693e-da92-4a53-894e-237a91890d29", "fd0d15dc-609a-4600-bd62-afd4ab89e458", "0e9a8ca3-3b97-438b-9710-35344393182f", "334b2dbf-367e-4530-b905-363c735766b8", "4355446e-d996-4f6c-868d-2e316e4d7192", "fe6f0980-3e13-4842-bb8a-c37c0c3a4072", "0bc87dcd-e99b-4b82-9dbd-63fefba19807"];
+
+async function loadHulaDashboard() {
+  if (window._hulaLoaded) return;
+  window._hulaLoaded = true;
+  const firstBtn = document.getElementById('tab-0');
+  loadHulaProject('02b90ad4-8ff2-4f1f-8465-4d14257bebe9', firstBtn, 0);
+}
+
+function showHulaFallback() {}
+
+function loadHulaProject(projectUuid, btn, tabIndex) {
+  document.querySelectorAll('#hula-project-tabs button').forEach(b => {
+    b.style.background='#fff'; b.style.color='var(--g700)';
+  });
+  if (btn) { btn.style.background='var(--g600)'; btn.style.color='#fff'; }
+
+  HULA_ORG_UUID = projectUuid;
+  const container = document.getElementById('hula-widget-container');
+  if (!container) return;
+
+  const existing = container.querySelector('hula-platform-widget');
+  if (existing && existing.getAttribute('projectUuid') === projectUuid) return;
+
+  container.innerHTML = `<hula-platform-widget
+    organizationUuid="d8d128a9-9b96-48ac-81ab-31d423a8eeb1"
+    projectUuid="${projectUuid}"
+    apiBaseUrl="https://public.hula.earth"
+    style="display:block;width:100%;min-height:500px;">
+    <a href="https://hula.earth">Hula Earth</a>
+  </hula-platform-widget>`;
+
+  // Chart laden
+  loadHulaChart(projectUuid, hulaCurrentMetric || 'lai');
+}
+
+let hulaChartInstance = null;
+let hulaCurrentProjectUuid = null;
+let hulaCurrentMetric = 'lai';
+
+function setHulaMetric(metric, label, btn) {
+  document.querySelectorAll('#hula-chart-card button').forEach(b => {
+    b.style.background = '#fff'; b.style.color = 'var(--g700)'; b.style.border = '1px solid var(--g300)';
+  });
+  if (btn) { btn.style.background = 'var(--g600)'; btn.style.color = '#fff'; btn.style.border = 'none'; }
+  hulaCurrentMetric = metric;
+  document.getElementById('hula-chart-title').textContent = label + ' im Verlauf';
+  if (hulaCurrentProjectUuid) loadHulaChart(hulaCurrentProjectUuid, metric);
+}
+
+async function loadHulaChart(projectUuid, metric) {
+  metric = metric || hulaCurrentMetric || 'lai';
+  hulaCurrentProjectUuid = projectUuid;
+  const loadingEl = document.getElementById('hula-chart-loading');
+  const subEl = document.getElementById('hula-chart-subtitle');
+  if (loadingEl) loadingEl.style.display = 'flex';
+
+  try {
+    const toDate   = new Date().toISOString().split('T')[0];
+    const fromDate = new Date(Date.now() - 730*24*60*60*1000).toISOString().split('T')[0];
+    const data = await hulaGet(`/v2/project/${projectUuid}/ecosystem/${metric}/timeline?from_date=${fromDate}&to_date=${toDate}`);
+    if (!data || !data.values) { if (loadingEl) loadingEl.textContent = 'Keine Daten verfügbar'; return; }
+
+    const points = (data.values || [])
+      .filter(v => v != null)
+      .map(v => typeof v === 'number' ? { value: v, date: null } : v)
+      .filter(v => v.value != null && !isNaN(v.value));
+    if (!points.length) { if (loadingEl) loadingEl.textContent = 'Keine Daten verfügbar'; return; }
+
+    const labels = points.map(p => p.date ? new Date(p.date).toLocaleDateString('de-DE', {month:'short', year:'2-digit'}) : '');
+    const values = points.map(p => p.value);
+    const windowSize = Math.max(1, Math.round(points.length / 6));
+    const moving = values.map((_, i) => {
+      const start = Math.max(0, i - windowSize + 1);
+      const slice = values.slice(start, i + 1);
+      return slice.reduce((a, b) => a + b, 0) / slice.length;
+    });
+
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (subEl) subEl.textContent = `${metric.toUpperCase()} · ${fromDate} – ${toDate}`;
+
+    const ctx = document.getElementById('hula-chart').getContext('2d');
+    if (hulaChartInstance) hulaChartInstance.destroy();
+    hulaChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Alle Flächen', data: values, borderColor: '#526F6B', backgroundColor: 'rgba(82,111,107,0.08)', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true },
+          { label: 'Gleitender Durchschnitt', data: moving, borderColor: '#CAA847', borderWidth: 2, borderDash: [6,4], pointRadius: 0, tension: 0.3, fill: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}` } } },
+        scales: {
+          x: { ticks: { maxTicksLimit: 8, font: { size: 11 }, color: '#888' }, grid: { display: false } },
+          y: { ticks: { font: { size: 11 }, color: '#888', callback: v => v.toFixed(2) }, grid: { color: 'rgba(0,0,0,0.05)' } }
+        }
+      }
+    });
+  } catch(e) {
+    if (loadingEl) { loadingEl.style.display = 'flex'; loadingEl.textContent = 'Proxy nicht verfügbar'; }
+  }
+}
+
 async function doLogout() {
   await sb.auth.signOut();
   document.getElementById('app').style.display = 'none';
@@ -726,6 +950,8 @@ async function initApp() {
   const initials = userName.substring(0, 2).toUpperCase();
   document.getElementById('user-avatar').textContent = initials;
   document.getElementById('user-name-display').textContent = userName;
+  const roleLabels = { admin: 'Administrator', kunde: 'Jägermeister', projektpartner: 'Projektpartner' };
+  document.getElementById('user-role-display').textContent = roleLabels[profile?.rolle] || '';
 
   // Kunde logo
   const kundeName = profile?.kunden?.name || 'Jägermeister';
@@ -761,6 +987,7 @@ function showPage(page, el) {
   document.getElementById('page-' + page).classList.add('active');
   if (el) el.classList.add('active');
   if (page === 'massnahmen') loadMassnahmen();
+  if (page === 'biodiversitaet') loadHulaDashboard();
   if (page === 'admin') { initAdminFotoRegion(); loadKundeLogo(); }
 }
 
@@ -782,7 +1009,7 @@ async function loadDashboard() {
   if (!region) return;
 
   document.getElementById('dash-title').textContent = region.name + ' – ' + (region.beschreibung || '');
-  document.getElementById('dash-sub').textContent = 'Saison ' + region.saison + ' · Jägermeister';
+  document.getElementById('dash-sub').textContent = 'Saison ' + region.saison;
 
   const { data: massnahmen } = await sb.from('massnahmen')
     .select('*, massnahmen_typen(*)')
